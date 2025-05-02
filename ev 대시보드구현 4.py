@@ -1,28 +1,25 @@
 import streamlit as st
 import pandas as pd
-
-#col2, col3 = st.columns([7, 3])
-# 엑셀파일
-d=pd.read_excel('C:/Users/명현주/Desktop/streamlit/Overview.xlsx')
-
-# xlsx 파일 결측값 제거
-d=pd.read_excel("C:/Users/명현주/Desktop/streamlit/Overview.xlsx")
-d=d.drop(columns=["Unnamed: 13"], errors="ignore")
-d=d.drop(index=[32, 33], errors="ignore")
-
-#파일 불러오기
-dfAA = pd.read_csv('C:/Users/명현주/Desktop/streamlit/dfAA.csv')
-dfBB = pd.read_csv('C:/Users/명현주/Desktop/streamlit/dfBB.csv')
-
-
-# 전력 소모 컬럼 추가
-dfAA['HVAC Power Consumption'] = dfAA['Heating Power CAN [kW]']+dfAA['AirCon Power [kW]']
-dfBB['HVAC Power Consumption'] = dfBB['Heating Power CAN [kW]']+dfBB['AirCon Power [kW]']
+import os
+import gdown
 import plotly.graph_objects as go
 import plotly.express as px
 
+# 엑셀파일
+d = pd.read_excel('C:/Users/명현주/Desktop/streamlit/Overview.xlsx')
 
+# xlsx 파일 결측값 제거
+d = pd.read_excel("C:/Users/명현주/Desktop/streamlit/Overview.xlsx")
+d = d.drop(columns=["Unnamed: 13"], errors="ignore")
+d = d.drop(index=[32, 33], errors="ignore")
 
+# 파일 불러오기
+dfAA = pd.read_csv('C:/Users/명현주/Desktop/streamlit/dfAA.csv')
+dfBB = pd.read_csv('C:/Users/명현주/Desktop/streamlit/dfBB.csv')
+
+# 전력 소모 컬럼 추가
+dfAA['HVAC Power Consumption'] = dfAA['Heating Power CAN [kW]'] + dfAA['AirCon Power [kW]']
+dfBB['HVAC Power Consumption'] = dfBB['Heating Power CAN [kW]'] + dfBB['AirCon Power [kW]']
 
 # **사이드바에서 Trip 선택**
 with st.sidebar:
@@ -122,73 +119,57 @@ with st.container():
                 unsafe_allow_html=True
             )
 
-
-
 # 🔹 중단 부분: 속도 상태와 배터리 전류 프로파일 (가로 2열 레이아웃)
 with st.container():
-        col1, col2 = st.columns(2)  # 가로 2열 레이아웃
+    col1, col2 = st.columns(2)  # 가로 2열 레이아웃
 
-        with col1:
-            # ✅ 전체 데이터에서 회생제동 에너지 누적합 계산
-            df_selected["회생제동으로 얻은 총 에너지"] = (
-                    df_selected.apply(
-                        lambda row: row["Battery Voltage [V]"] * row["Battery Current [A]"] * 0.1
-                        if row["Battery Current [A]"] > 0 else 0, axis=1
-                    ).cumsum()
-                )
-            # ✅ 선택한 시간까지의 누적된 회생 에너지 계산
-            regen_energy = df_selected[df_selected["Time [s]"] <= selected_time]["회생제동으로 얻은 총 에너지"].max()
+    with col1:
+        # ✅ 전체 데이터에서 회생제동 에너지 누적합 계산
+        df_selected["회생제동으로 얻은 총 에너지"] = (
+            df_selected.apply(
+                lambda row: row["Battery Voltage [V]"] * row["Battery Current [A]"] * 0.1
+                if row["Battery Current [A]"] > 0 else 0, axis=1
+            ).cumsum()
+        )
+        # ✅ 선택한 시간까지의 누적된 회생 에너지 계산
+        regen_energy = df_selected[df_selected["Time [s]"] <= selected_time]["회생제동으로 얻은 총 에너지"].max()
 
-            # 왼쪽(col1)에 순서대로 위젯을 배치하면 세로로 쌓임
-            with st.expander("♻️ 회생제동으로 얻은 총 에너지", expanded=True):
-                st.markdown(
+        # 왼쪽(col1)에 순서대로 위젯을 배치하면 세로로 쌓임
+        with st.expander("♻️ 회생제동으로 얻은 총 에너지", expanded=True):
+            st.markdown(
                 f"<div style='text-align: center;'><strong>{regen_energy:.0f} Wh</strong></div>", 
                 unsafe_allow_html=True
             )
 
+        with st.expander("📉 실시간 속도 상태", expanded=True):
+            velocity = df_selected_time.iloc[0]["Velocity [km/h]"] if not df_selected_time.empty else 0
 
-            with st.expander("📉 실시간 속도 상태", expanded=True):
-                velocity = df_selected_time.iloc[0]["Velocity [km/h]"] if not df_selected_time.empty else 0
+        fig_velocity_gauge = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=velocity,
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": "blue", "thickness": 0.2}
+            },
+            title={'text': "Speed (km/h)", 'font': {'size': 24, 'weight': 'bold'}}                
+        ))
+        fig_velocity_gauge.update_layout(
+            margin=dict(l=30, r=30, t=50, b=0),
+            width=200,
+            height=300
+        )
+        st.plotly_chart(fig_velocity_gauge, use_container_width=True)
 
-            fig_velocity_gauge = go.Figure(go.Indicator(
-                mode="gauge+number",
-                value=velocity,
-                gauge={
-                    "axis": {"range": [0, 100]},
-                    "bar": {"color": "blue", "thickness": 0.2}
-                },
-                title={'text': "Speed (km/h)", 'font': {'size': 24,'weight': 'bold'}}                
-            ))
-            fig_velocity_gauge.update_layout(
-                margin=dict(l=30, r=30, t=50, b=0),
-                width=200,
+    with col2:
+        # 오른쪽(col2)에는 배터리 전류 프로파일 그래프 배치
+        with st.expander("⚡ 배터리 전류 프로파일", expanded=True):
+            fig_current = px.line(
+                df_selected, x="Time [s]", y="Battery Current [A]", 
+                labels={"Time [s]": "시간 (s)", "Battery Current [A]": "배터리 전류 (A)"},
+                title="배터리 전류 변화 그래프",
                 height=300
             )
-            st.plotly_chart(fig_velocity_gauge, use_container_width=True)
-
-        with col2:
-            # 오른쪽(col2)에는 배터리 전류 프로파일 그래프 배치
-            with st.expander("⚡ 배터리 전류 프로파일", expanded=True):
-                fig_current = px.line(
-                    df_selected, x="Time [s]", y="Battery Current [A]", 
-                    labels={"Time [s]": "시간 (s)", "Battery Current [A]": "배터리 전류 (A)"},
-                    title="배터리 전류 변화 그래프",
-                    height=300
-                )
-                st.plotly_chart(fig_current, use_container_width=True)
-                # ✅ 전체 데이터에서 회생제동 에너지 누적합 계산
-                df_selected["회생제동으로 얻은 총 에너지"] = (
-                    df_selected.apply(
-                        lambda row: row["Battery Voltage [V]"] * row["Battery Current [A]"] * 0.1
-                        if row["Battery Current [A]"] > 0 else 0, axis=1
-                    ).cumsum()
-                )
-                # ✅ 선택한 시간까지의 누적된 회생 에너지 계산
-                regen_energy = df_selected[df_selected["Time [s]"] <= selected_time]["회생제동으로 얻은 총 에너지"].max()
-
-
-
-
+            st.plotly_chart(fig_current, use_container_width=True)
 
 # selected_trip이 "A1" ~ "A9"라면 "A01" ~ "A09"로 변경
 if selected_trip[1].isdigit() and int(selected_trip[1:]) < 10:
@@ -206,52 +187,10 @@ st.markdown(
     """
     <div style="padding: 10px; border-radius: 10px; border: 3px solid #2196F3; 
         text-align: center; font-size: 14px; font-weight: bold; 
-        background-color: #f1f8ff; color: #333; padding: 8px;">
-        🌦 **주행 환경 정보**
+        background-color: #e3f2fd; width: 100%;">
+        <strong>자세한 주행 환경 정보: </strong><br>속도, 온도, 압력, 고도 등 다양한 정보를 제공합니다. 
+        선택한 데이터의 세부 사항을 표시합니다.
     </div>
     """,
     unsafe_allow_html=True
 )
-
-# ✅ 네모 박스 내부에 3열 레이아웃 추가
-col_date, col_weather, col_temp = st.columns(3)
-
-
-import pandas as pd
-
-# 📅 첫 번째 열 (선택한 Trip의 날짜 + 시간)
-with col_date:
-    with st.expander("📅 현재 시각", expanded=True):
-        # 언더스코어를 공백으로 변경 후, datetime 형식으로 변환
-        selected_data["Date"] = pd.to_datetime(selected_data["Date"].str.replace("_", " "), format="%Y-%m-%d %H-%M-%S")
-
-        if not df_selected_time.empty:
-            selected_seconds = df_selected_time["Time [s]"].iloc[0]  # 선택한 시점 (초)
-        else:
-            selected_seconds = 0  
-
-        # 날짜에 초 단위 시간 추가
-        selected_datetime = selected_data["Date"].iloc[0] + pd.to_timedelta(selected_seconds, unit="s")
-
-        # 포맷 변경하여 출력
-        formatted_datetime = selected_datetime.strftime("%Y-%m-%d %H:%M:%S")
-        st.markdown(f"**📌 {formatted_datetime}**")
-
-
-
-
-# ⛅ 두 번째 열 (선택한 Trip의 날씨)
-with col_weather:
-    with st.expander("⛅ 날씨", expanded=True):
-        selected_weather = selected_data["Weather"].values[0]
-        st.markdown(f"**🌤 {selected_weather}**")
-
-# 🌡 세 번째 열 (선택한 Trip과 선택한 시점의 외기 온도)
-with col_temp:
-    with st.expander("🌡 외기 온도", expanded=True):
-        if not df_selected_time.empty:
-            ambient_temp = df_selected_time["Ambient Temperature [°C]"].iloc[0]
-        else:
-            ambient_temp = "데이터 없음"
-
-        st.markdown(f"**🌡 {ambient_temp}°C**")

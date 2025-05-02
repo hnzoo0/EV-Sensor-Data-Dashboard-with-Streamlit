@@ -1,18 +1,13 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
-
-
 import joblib
 import gdown
-
-
 import os
 
 
 # ✅ 피클 파일 다운로드 (최초 실행 시 한 번만 다운로드됨)
-file_id = '1t3CzygdUX2uajH_Cwkx5RUiahjhNQX15' # 파일 ID만 추출
+file_id = '1t3CzygdUX2uajH_Cwkx5RUiahjhNQX15'  # 파일 ID만 추출
 output = 'model_0310.pkl'
 
 # 이미 파일이 존재하면 다운로드 생략
@@ -21,11 +16,11 @@ if not os.path.exists(output):
 else:
     print(f"✅ '{output}' 파일이 이미 존재합니다. 다운로드 생략.")
 
-    
+
 # ✅ 모델 로드 함수
 @st.cache_resource
 def load_model():
-    model_path = "C:/Users/명현주/Desktop/streamlit/model_0310.pkl"
+    model_path = "model_0310.pkl"  # 다운로드된 모델 경로
     
     # 파일 존재 여부 확인
     if not os.path.exists(model_path):
@@ -62,7 +57,6 @@ with st.form("input_form"):
     with col1:
         battery_current = st.number_input("Battery Current A", value=10.0, step=0.1)
         battery_power = st.number_input("Battery Power (W)", value=5000.0, step=10.0)
-        
 
     with col2:
         battery_capacity = st.number_input("Battery Capacity (Wh)_shift", value=40000.0, step=10.0)
@@ -70,29 +64,40 @@ with st.form("input_form"):
 
     submit_button = st.form_submit_button("예측 시작")
 
-
-
 # ✅ 예측 실행
 if submit_button:
     try:
-        input_data = np.array([[battery_current, battery_power,hvac_power, battery_capacity]])
-        # st.write(input_data)
-
+        input_data = np.array([[battery_current, battery_power, hvac_power, battery_capacity]])
+        
         # 학습 당시 사용한 컬럼명과 동일하게 맞추기
         features_df = pd.DataFrame(input_data, columns=[
             "Battery Current A",  # 기존 "Battery Current [A]" -> "Battery Current A"
             "Battery Power (W)",
             "HVAC Power Consumption",
             "Battery Capacity (Wh)_shift",  # 기존 "Battery Capacity (Wh)" -> "Battery Capacity (Wh)_shift"
-            
         ])
-       #  st.dataframe(features_df)
-
+        
+        # 예측
         prediction = model.predict(features_df)
+        
         st.success(f"🔮 예측된 SoC_diff: {prediction[0]:.4f}")
+
+        # 예측 결과에 대한 추가 정보 (시각화나 설명)
+        st.write("### 예측된 결과")
+        st.write(f"**배터리 전류 (A):** {battery_current} A")
+        st.write(f"**배터리 전력 (W):** {battery_power} W")
+        st.write(f"**HVAC 전력 소비량:** {hvac_power} kW")
+        st.write(f"**배터리 용량 (Wh):** {battery_capacity} Wh")
+
+        # 예측 결과를 보다 직관적으로 보여주기 위해 결과 시각화 추가 가능
+        import matplotlib.pyplot as plt
+        
+        fig, ax = plt.subplots()
+        ax.bar(["Predicted SoC_diff"], [prediction[0]], color="blue")
+        ax.set_ylabel("SoC_diff")
+        st.pyplot(fig)
 
     except AttributeError as e:
         st.error(f"⚠️ 모델 예측 중 오류 발생: {e}")
-
 
 

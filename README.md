@@ -38,6 +38,12 @@ GitHub + Streamlit Cloud (배포)
 
 
 
+----------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 
 ## 🚗 Electric Vehicle Sensor Data Analysis and Prediction Dashboard
 
@@ -59,7 +65,7 @@ Data Items: Includes key sensor variables such as battery charge/discharge statu
 
 ## 🚀 Demo Link
 
-👉 [바로가기](https://ev-sensor-data-dashboard-with-app-cbacoc2k7rpz4yy3r6qo7r.streamlit.app/)
+👉 [Run Dashboard](https://ev-sensor-data-dashboard-with-app-cbacoc2k7rpz4yy3r6qo7r.streamlit.app/)
 
 
 ## ⚙️ Technologies Used

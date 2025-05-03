@@ -21,15 +21,50 @@
 
 
 
-🚀 데모 바로가기
+## 🚀 데모 바로가기
 
 👉 [바로가기](https://ev-sensor-data-dashboard-with-app-cbacoc2k7rpz4yy3r6qo7r.streamlit.app/)
 
 
 
-⚙️ 사용 기술
+## ⚙️ 사용 기술
 
 Python (Pandas, NumPy, Scikit-learn, 다양한 모델 라이브러리)
 Streamlit
 Plotly / Matplotlib (시각화)
 GitHub + Streamlit Cloud (배포)
+
+
+
+
+
+
+## 🚗 Electric Vehicle Sensor Data Analysis and Prediction Dashboard
+
+This dashboard analyzes electric vehicle driving sensor data to identify battery consumption patterns across different driving scenarios. Based on this analysis, it visually presents the results of a battery performance prediction model and a driving range prediction model. Designed with a user-friendly interface built on Streamlit, it allows users to easily understand EV data and view analysis results.
+
+## 🔧 Key Features
+
+Battery Consumption Analysis by Driving Scenario: Visualization of battery consumption characteristics based on various driving environments and patterns.
+Battery Performance Prediction: Presentation of results from a model predicting battery state and performance changes based on accumulated driving data.
+Driving Range Prediction: Prediction of possible driving distance from the current state using a regression model based on driving data.
+Key Data Visualization: Analysis of trends and distributions of core sensor data including battery voltage, current, temperature, and speed.
+
+## 🧪 Target Data and Models
+
+Target Data: Actual EV driving sensor data, Battery Management System (BMS) data, etc.
+Models Used: Analysis techniques for driving scenarios, battery performance prediction models, regression models for driving range prediction, etc.
+Data Items: Includes key sensor variables such as battery charge/discharge status, driving speed, external/internal temperature, total mileage, and more.
+
+
+## 🚀 Demo Link
+
+👉 [바로가기](https://ev-sensor-data-dashboard-with-app-cbacoc2k7rpz4yy3r6qo7r.streamlit.app/)
+
+
+## ⚙️ Technologies Used
+
+Python (Pandas, NumPy, Scikit-learn, various model libraries)
+Streamlit
+Plotly / Matplotlib (Visualization)
+GitHub + Streamlit Cloud (Deployment)
